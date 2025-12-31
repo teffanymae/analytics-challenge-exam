@@ -1,3 +1,5 @@
+import type { Tables } from "@/lib/database/database.types";
+
 export interface DailyEngagement {
   date: string;
   likes: number;
@@ -7,13 +9,10 @@ export interface DailyEngagement {
   total: number;
 }
 
-export interface PostMetrics {
-  posted_at: string;
-  likes: number | null;
-  comments: number | null;
-  shares: number | null;
-  saves: number | null;
-}
+export type PostMetrics = Pick<
+  Tables<"posts">,
+  "posted_at" | "likes" | "comments" | "shares" | "saves"
+>;
 
 export function aggregateByDate(posts: PostMetrics[]): Map<string, DailyEngagement> {
   const map = new Map<string, DailyEngagement>();
