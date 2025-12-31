@@ -1,0 +1,579 @@
+# Analytics Dashboard Challenge
+
+A Next.js dashboard for tracking social media engagement across Instagram and TikTok. Built with Next.js 15, Supabase, TanStack Query, and Recharts.
+
+---
+
+## User Setup
+
+1. Create **User A**:
+   - Email: `usera@test.com`
+   - Password: `TestUser123!`
+   - Auto Confirm User: ✅ (check this)
+2. Click **Create User** and **copy the User ID (UUID)**
+3. Repeat for **User B**:
+   - Email: `userb@test.com`
+   - Password: `TestUser123!`
+   - Auto Confirm User: ✅
+   - **Copy the User ID (UUID)**
+
+---
+
+## 🛠 Tech Stack Summary
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Framework** | Next.js 15 (App Router) | SSR/CSR, routing, API routes |
+| **Database** | Supabase (PostgreSQL) | Data persistence, auth, RLS |
+| **Server State** | TanStack Query v5 | Caching, refetching, deduplication |
+| **Client State** | Zustand | UI state, localStorage persistence |
+| **Styling** | Tailwind CSS + shadcn/ui | Utility-first CSS, accessible components |
+| **Charts** | Visx (D3-powered) | Composable, customizable visualizations |
+| **Tables** | TanStack Table v8 | Sorting, filtering, pagination |
+| **Auth** | Supabase Auth | Email/password, session management |
+| **Deployment** | Vercel | Edge functions, automatic deployments |
+
+---
+
+## 📁 Project Structure
+
+```
+analytics-challenge/
+├── src/
+│   ├── app/                          # Next.js App Router
+│   │   ├── api/                      # API Routes
+│   │   │   ├── analytics/            # Analytics endpoints
+│   │   │   │   ├── daily/            # Daily metrics aggregation
+│   │   │   │   └── summary/          # Summary statistics
+│   │   │   ├── auth/                 # Authentication endpoints
+│   │   │   │   ├── login/            # Login handler
+│   │   │   │   ├── logout/           # Logout handler
+│   │   │   │   └── signup/           # Signup handler
+│   │   │   └── posts/                # Posts CRUD operations
+│   │   │       └── [id]/             # Individual post operations
+│   │   ├── auth/                     # Auth pages
+│   │   │   ├── login/                # Login page
+│   │   │   └── signup/               # Signup page
+│   │   ├── dashboard/                # Dashboard page (protected)
+│   │   ├── layout.tsx                # Root layout
+│   │   ├── page.tsx                  # Home/landing page
+│   │   ├── globals.css               # Global styles
+│   │   └── favicon.ico               # App icon
+│   │
+│   ├── components/                   # React Components
+│   │   ├── charts/                   # Chart components
+│   │   │   ├── EngagementChart.tsx   # Main engagement visualization
+│   │   │   └── ChartControls.tsx     # Chart type toggles
+│   │   ├── posts/                    # Post-related components
+│   │   │   ├── PostsTable.tsx        # TanStack Table implementation
+│   │   │   ├── PostModal.tsx         # Post detail modal
+│   │   │   └── PostFilters.tsx       # Platform filters
+│   │   ├── providers/                # Context providers
+│   │   │   └── QueryProvider.tsx     # TanStack Query setup
+│   │   ├── ui/                       # shadcn/ui components
+│   │   │   ├── button.tsx            # Button component
+│   │   │   ├── card.tsx              # Card component
+│   │   │   ├── table.tsx             # Table primitives
+│   │   │   └── ...                   # Other UI components
+│   │   └── theme-provider.tsx        # Theme context
+│   │
+│   ├── lib/                          # Utilities & Configuration
+│   │   ├── hooks/                    # Custom React hooks
+│   │   │   ├── useAnalytics.ts       # Analytics data fetching
+│   │   │   ├── usePosts.ts           # Posts data fetching
+│   │   │   └── useAuth.ts            # Auth state management
+│   │   ├── services/                 # API service layer
+│   │   │   ├── analytics.ts          # Analytics API calls
+│   │   │   ├── posts.ts              # Posts API calls
+│   │   │   └── auth.ts               # Auth API calls
+│   │   ├── stores/                   # Zustand stores
+│   │   │   ├── useFilterStore.ts     # Filter state (platform, etc.)
+│   │   │   └── useUIStore.ts         # UI state (modals, chart type)
+│   │   ├── aggregation.ts            # Metrics calculation logic
+│   │   ├── auth.ts                   # Supabase auth client
+│   │   ├── auth-edge.ts              # Edge-compatible auth
+│   │   ├── supabase.ts               # Supabase client setup
+│   │   ├── types.ts                  # TypeScript type definitions
+│   │   ├── utils.ts                  # Utility functions
+│   │   └── constants.ts              # App constants
+│   │
+│   └── middleware.ts                 # Next.js middleware (auth protection)
+│
+├── superbase/                        # Supabase configuration
+│   ├── migrations/                   # Database migrations
+│   │   └── 001_initial_schema.sql    # Initial schema setup
+│   └── seed.sql                      # Seed data for testing
+│
+├── public/                           # Static assets
+│   ├── next.svg                      # Next.js logo
+│   ├── vercel.svg                    # Vercel logo
+│   └── ...                           # Other static files
+│
+├── .env.example                      # Environment variables template
+├── .gitignore                        # Git ignore rules
+├── components.json                   # shadcn/ui configuration
+├── next.config.ts                    # Next.js configuration
+├── tsconfig.json                     # TypeScript configuration
+├── tailwind.config.ts                # Tailwind CSS configuration
+├── postcss.config.mjs                # PostCSS configuration
+├── package.json                      # Dependencies
+├── vercel.json                       # Vercel deployment config
+├── DEPLOYMENT.md                     # Deployment guide
+└── README.md                         # This file
+```
+
+### Key Architecture Decisions
+
+**App Router Structure**
+- Using Next.js 15 App Router for file-based routing
+- API routes colocated with pages for better organization
+- Server Components by default, Client Components where needed
+
+**State Management Layers**
+- **TanStack Query** (`src/lib/hooks/`) - Server state, caching, refetching
+- **Zustand** (`src/lib/stores/`) - Client state, UI preferences, localStorage persistence
+- **React State** - Component-local ephemeral state
+
+**Component Organization**
+- **Feature-based** (`charts/`, `posts/`) - Components grouped by feature
+- **Shared UI** (`ui/`) - Reusable shadcn/ui primitives
+- **Providers** - Context providers for global state
+
+**Data Flow**
+1. User interacts with UI component
+2. Component calls custom hook (`useAnalytics`, `usePosts`)
+3. Hook uses TanStack Query to fetch from API route
+4. API route aggregates data from Supabase
+5. Response cached by TanStack Query
+6. UI updates with new data
+
+---
+# Design Decisions
+
+## 1. Where should engagement metrics be aggregated?
+
+**Chosen Approach: Hybrid (API Route + Client-side)**
+
+I went with a split approach - heavy lifting on the server, lightweight stuff on the client.
+
+### What I Built
+- **API Route (`/api/analytics/summary`)** - Does the math for summary cards (total engagement, averages, trend percentages)
+- **Client-side (`aggregation.ts`)** - Groups posts by date and fills in missing days for the charts
+- **Database** - Just stores raw posts, no fancy views or stored procedures
+
+### Why I Did It This Way
+
+**Server-side for summary metrics:**
+
+Honestly, I didn't want to send hundreds of posts over the wire just to sum them up. The summary endpoint does all the calculations in the API route and sends back like 3 numbers. Way faster, especially on mobile.
+
+Plus TanStack Query caches it automatically, so if you switch between tabs or filters, it doesn't recalculate everything. And keeping the business logic server-side means I can validate it properly and not worry about someone messing with the calculations in the browser console.
+
+**Client-side for chart data:**
+
+The charts are different - users need to switch between likes/comments/shares/saves instantly. If I did that server-side, I'd need 4 different API endpoints or one endpoint that returns everything (wasteful). 
+
+By doing the date grouping in the browser, I can fetch the raw posts once and then let users toggle between metrics without any loading spinners. The aggregation logic is pretty simple anyway - just grouping by date and summing values.
+
+### The Trade-offs
+
+**What's good:**
+- Fast - only sends what's needed over the network
+- TanStack Query handles all the caching for free
+- Didn't have to build a bunch of API endpoints
+
+**What's not ideal:**
+- Some business logic lives in two places (server for summaries, client for charts)
+
+---
+
+## 2. What data should live in Zustand vs. TanStack Query vs. URL state?
+
+**Chosen Approach: Keep it simple - Zustand for UI stuff, TanStack Query for server data**
+
+This was actually pretty straightforward once I understood what each tool is good at.
+
+### Where Everything Lives
+
+| State | Where It Lives | Why |
+|-------|----------|--------|
+| **Platform filter** | Zustand (saved) | So it remembers if you filtered to Instagram |
+| **Sort column/direction** | TanStack Table | Just table UI stuff, no need to save it |
+| **Selected post (modal)** | Zustand (not saved) | Modal should close on refresh |
+| **Chart view type** | Zustand (saved) | If you like area charts, it'll remember |
+| **Posts data** | TanStack Query | It's from the server, TanStack Query handles it |
+| **Daily metrics data** | TanStack Query | Same - server data |
+| **Days filter (30/60/90)** | Zustand (saved) | Remembers your preferred time range |
+
+### How I Set It Up
+
+**Zustand store (`ui-store.ts`)** - Split into two groups:
+
+*Saved to localStorage (survives refresh):*
+- Platform filter (All/Instagram/TikTok)
+- Page size
+- Days (30/60/90)
+- Chart types (line vs area)
+
+*Not saved (resets on refresh):*
+- Which post modal is open
+- Modal open/closed state
+
+**TanStack Query** - Handles all the API calls:
+- Query keys like `["posts", platform, page, pageSize]` so it knows when to refetch
+- Caches everything automatically
+- If two components need the same data, it only fetches once
+
+**URL state** - I didn't use it. 
+
+### Why I Made These Choices
+
+**Zustand for UI preferences:**
+
+I wanted the dashboard to remember your settings. Like if you always filter to Instagram and prefer area charts, it should just stay that way when you come back. Zustand with localStorage does this perfectly.
+
+Also, it's way simpler than syncing everything to the URL. No weird URL parsing, no navigation side effects.
+
+**TanStack Query for server data:**
+
+This was a no-brainer. It's literally built for fetching and caching server data. The best part is it handles all the annoying stuff - loading states, error handling, refetching, deduplication. I just call `usePosts()` and it works.
+
+Before this project I was using Redux Toolkit, and honestly TanStack Query is so much simpler for API data.
+
+**Why I skipped URL state:**
+
+I thought about it - like having `?platform=instagram&days=30` in the URL so you could share links. But realistically, this is a personal dashboard. You're not sharing your analytics with anyone. And adding URL state means dealing with:
+- URL parsing on mount
+- Syncing URL with Zustand
+- Handling browser back/forward
+- More complexity for a feature nobody asked for
+
+If this was a public analytics page or a team dashboard, then yeah, URL state would make sense. But for now, YAGNI (You Aren't Gonna Need It).
+
+### What's Good and What's Not
+
+**What works well:**
+- Super clear where each piece of state lives
+- TanStack Query does all the heavy lifting
+- Settings persist across sessions
+- Really easy to add new UI state
+
+**What could be better:**
+- Your settings don't sync across devices (localStorage is per-browser)
+
+---
+
+## 3. How do you handle the case where a user has no data?
+
+**Chosen Approach: Return zeros and show empty states (don't crash)**
+
+### What Happens When There's No Data
+
+**Summary Cards:**
+- Top Post card shows "No posts available" (not an error)
+- Total engagement shows `0`
+- Average engagement rate shows `0%`
+- Trend shows `0%` (neutral, no arrow)
+
+**Charts:**
+- Loading skeleton while fetching
+- "No data available" message if empty
+- Doesn't crash or show a blank screen
+- Handles missing previous period data gracefully
+
+**Posts Table:**
+- Empty state with a message
+- Table headers still show (so it doesn't look broken)
+- Could add a "Create your first post" button here but didn't have time
+
+**API responses:**
+- Always return `[]` for empty arrays
+- Always return `0` for numbers (never `null` or `undefined`)
+- This keeps TypeScript happy and prevents crashes
+
+### The Tricky Edge Cases
+
+**What if there are 0 posts?**
+
+Engagement rate = 0%. I thought about returning `null` or `"N/A"` but that breaks the chart rendering. Plus TypeScript would complain everywhere. Returning `0%` is technically correct (0 posts = 0% engagement) and keeps the types simple.
+
+**What if there's no previous period data for trends?**
+
+Trend shows `0%` change. No arrow, neutral gray color. It's the most honest answer - can't calculate a trend without data to compare.
+
+**What if someone has only 1 post?**
+
+Chart still renders. Shows a single point/area. Visx handles this fine, doesn't crash.
+
+### The Code
+
+Here's how I handle it in the API:
+```typescript
+const averageEngagementRate =
+  currentPosts.length > 0
+    ? currentPosts.reduce((sum, post) => sum + (post.engagement_rate || 0), 0) / currentPosts.length
+    : 0; // Just return 0, don't overthink it
+```
+
+Simple ternary. If no posts, return 0. Done.
+
+### Trade-offs
+
+**What works:**
+- Nothing crashes
+- Consistent everywhere (always numbers, never null)
+- TypeScript is happy
+- Users see helpful messages
+
+**What's not perfect:**
+- `0%` engagement could be confusing (is it bad performance or no data?)
+- Could show "N/A" but then I'd need to handle strings in the chart logic
+- Empty states take up space, makes the dashboard look a bit empty
+
+---
+
+## 4. How should the "trend" percentage be calculated?
+
+**Chosen Approach: Last 30 days vs. the 30 days before that**
+
+I went with the simplest approach that actually makes sense.
+
+### How It Works
+
+If you're looking at the last 30 days:
+- **Current period**: Last 30 days (e.g., Dec 1 - Dec 31)
+- **Previous period**: The 30 days before that (Nov 1 - Nov 30)
+- **Trend**: % change between these two periods
+
+Code:
+```typescript
+const currentStartDate = new Date();
+currentStartDate.setDate(currentStartDate.getDate() - days); // Go back 30 days
+
+const previousStartDate = new Date(currentStartDate);
+previousStartDate.setDate(previousStartDate.getDate() - days); // Go back another 30 days
+
+const trendChange = ((current - previous) / previous) * 100;
+```
+
+So if you select 7 days, it compares last 7 days to the 7 days before. If you select 90 days, it compares last 90 to the previous 90. Always equal periods.
+
+### Why I Did It This Way
+
+**Why rolling comparison:**
+
+It's consistent. You're always comparing apples to apples - same number of days. The UI says "↑ 15.3% vs. prior 30 days" which is pretty clear.
+
+Also, it only needs 60 days of data max (for a 30-day comparison). New users can see trends pretty quickly.
+
+**Why NOT "this month vs. last month":**
+
+Months have different lengths. Comparing a 28-day February to a 31-day March is weird. Plus what if it's the 15th of the month? Do you compare a partial month? Too complicated.
+
+**Why NOT year-over-year:**
+
+You'd need a full year of data. A new user would see no trends for 365 days. That's terrible UX. Plus social media moves fast - comparing to a year ago isn't that useful.
+
+### Edge Cases I Had to Handle
+
+**Not enough data:**
+
+If a user only has 20 days of data but asks for 30 days, I just use what's available. There's validation in `analytics.service.ts` that prevents requesting more days than the user has been active.
+
+**Previous period is zero:**
+
+If previous engagement was 0 and current is 100, that's technically infinite % growth. But showing "∞%" is confusing. I just return `0%` change. The `calculateChange()` function handles this:
+```typescript
+if (previous === 0) return 0;
+```
+
+**Negative trends:**
+
+If engagement dropped, show it as negative with a red down arrow. Like "-12.5%". Users need to know if things are getting worse.
+
+### What Users See
+
+The UI shows:
+```
+↑ 15.3% vs. prior 30 days
+```
+
+- Green up arrow if positive
+- Red down arrow if negative
+- Actual percentage
+- Clear label so there's no confusion about what it's comparing
+
+### Trade-offs
+
+**What's good:**
+- Dead simple to understand
+- Works for any time range
+- Only needs 2x the data (60 days for 30-day trend)
+- Consistent comparisons
+
+**What could be better:**
+- Doesn't account for seasonality (Christmas vs. random week in November)
+- Only shows short-term trends, not long-term patterns
+
+---
+
+## What I'd Improve with More Time
+
+Being realistic here - this is what I'd actually tackle if I had another week:
+
+### Performance (The Obvious Stuff)
+- **Add database indexes** - Right now I'm doing full table scans on `user_id` and `created_at`. With real data, this would be slow. Need composite indexes.
+- **Implement proper caching** - TanStack Query helps, but I'd add Redis for the aggregation endpoints. Those calculations are expensive.
+- **Optimize the chart query** - Currently fetching all daily metrics and aggregating in JS. Should probably do this in SQL with a window function.
+
+### Features I Wanted But Didn't Have Time For
+- **Date range picker** - Let users choose their own time period
+- **Export to CSV** - Seems basic, but users always want to export data
+- **Post editing** - Right now you can only view posts, not edit them
+- **Bulk delete** - Select multiple posts and delete them at once
+- **Search/filter by content** - Search post captions or filter by hashtags
+
+### UX Polish
+- **Error messages that actually help** - "Something went wrong" isn't helpful. Tell users what to do.
+- **Keyboard shortcuts** - Arrow keys to navigate table, Escape to close modal, etc.
+- **Mobile responsive** - It works on mobile, but it's not optimized. The cards are overlapping in Tablet view.
+
+---
+
+## Time Spent on This Challenge
+
+**Total**: About 8-10 hours over 2 days (plus ~2 hours of learning/research)
+
+### My Actual Development Process
+
+**Full transparency**: I'm primarily a UI/UX developer who usually works up to API integration. I hadn't used Supabase, Zustand, or TanStack Query before this challenge. My usual stack is Redux Toolkit, so this was a learning experience.
+
+### Day 1 - Learning Phase (~5 hours)
+- **Generated the challenge requirements using AI** - Wanted to understand what I needed to build first
+- **Researched the tech stack** - Read docus on TanStack Query and Zustand
+- **Key realization**: TanStack Query is way simpler than Redux Toolkit for server state. Zustand is basically Redux without the boilerplate.
+- **Used AI to generate SQL schema and seed data** - I'm not a database expert, so I let AI handle the initial setup
+
+### Day 2 (~7 hours)
+- **Setup** - Created Next.js project, followed Supabase docs to set up the database.
+- **Auth** - Copy-pasted Supabase Auth examples, modified for my needs. Middleware inside supabase lib won't work so I moved it outside of lib/supabase/ folder.
+- **Database & Seed Data** - Used the AI-generated schema, created API endpoints. Generate seed data using AI.
+- **Planning** - Drew out the architecture and wireframe on paper. Decided to use AI for UI generation so I could focus on the logic and architecture.
+- **NextJS App Router** - Set up the app router and middleware. 
+- **TanStack Query** - Set up TanStack Query hooks. This was surprisingly easy compared to Redux. 
+- **UI Components** - Generated initial UI with AI (shadcn/ui components), then customized them. Built the posts table with TanStack Table (first time using it - docs are good). 
+- **State Management** - Set up Zustand. Zustand took 10 minutes to understand - it's just a simple store with hooks.
+- **TanStack Table** - Built the posts table with TanStack Table.
+- **Charting** - Built the engagement chart with Visx.
+- **Final Polish** - Used AI to refactor and format the code for cleanliness. Added loading states and error messages.
+
+### What Took Longer Than Expected
+- **Learning curve for the required tech stacks** - 5 hours of reading RND and trying to understand the code that was generated by AI
+
+### What Was Faster Than Expected
+- **TanStack Query** - Way simpler than Redux Toolkit. Just `useQuery` and you're done.
+- **Zustand** - Took 10 minutes to set up. No actions, reducers, or middleware needed.
+- **AI-assisted development** - Generating boilerplate UI and SQL saved ~2 hours
+
+### Key Learnings
+1. **TanStack Query > Redux for server state** - I'll be using this in future projects
+2. **Zustand is perfect for simple client state** - No need for Redux boilerplate
+3. **AI is great for boilerplate, but you need to understand the architecture** - I spent time planning the architecture and data flow before generating code
+4. **Visx for custom charts** - More control, but steeper learning curve
+5. **Next.js App Router is powerful but has a learning curve** - Especially middleware and route handlers
+
+---
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+### Prerequisites
+- A [Vercel account](https://vercel.com/signup)
+- A Supabase project with the database schema and seed data set up
+- Git repository (GitHub, GitLab, or Bitbucket)
+
+### Deployment Steps
+
+1. **Push your code to a Git repository** (if not already done):
+   ```bash
+   git add .
+   git commit -m "Prepare for Vercel deployment"
+   git push origin main
+   ```
+
+2. **Deploy to Vercel**:
+   - Go to [Vercel Dashboard](https://vercel.com/new)
+   - Click **"Add New Project"**
+   - Import your Git repository
+   - Vercel will auto-detect Next.js framework settings
+
+3. **Configure Environment Variables**:
+   In the Vercel project settings, add the following environment variables:
+   
+   | Variable Name | Value | Description |
+   |---------------|-------|-------------|
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://your-project.supabase.co` | Your Supabase project URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `your-anon-key` | Your Supabase anonymous key |
+
+   **How to add environment variables in Vercel:**
+   - Go to your project in Vercel Dashboard
+   - Navigate to **Settings** → **Environment Variables**
+   - Add each variable with its value
+   - Select environments: **Production**, **Preview**, and **Development**
+   - Click **Save**
+
+4. **Deploy**:
+   - Click **Deploy**
+   - Vercel will build and deploy your application
+   - Once complete, you'll receive a production URL
+
+5. **Verify Deployment**:
+   - Visit your production URL
+   - Test authentication with the seeded users
+   - Verify the dashboard and analytics features work correctly
+
+### Redeployment
+
+For subsequent deployments, simply push to your Git repository:
+```bash
+git push origin main
+```
+
+Vercel will automatically trigger a new deployment.
+
+### Troubleshooting
+
+- **Build fails**: Check the build logs in Vercel Dashboard
+- **Environment variables not working**: Ensure they're set for the correct environment (Production/Preview/Development)
+- **Supabase connection issues**: Verify your Supabase URL and anon key are correct
+- **Need to redeploy**: Go to Deployments tab and click "Redeploy"
+
+For more details, check the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying).
