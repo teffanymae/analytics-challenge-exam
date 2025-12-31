@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { Tables } from "@/lib/database.types";
-import { calculateEngagement } from "@/lib/engagement";
+import { Tables } from "@/lib/database/database.types";
+import { calculateEngagement } from "@/lib/utils/engagement";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

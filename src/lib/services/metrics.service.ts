@@ -1,23 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ValidationError } from "@/lib/errors";
-import { validateDaysParam } from "@/lib/validation";
-import dayjs from "dayjs";
-import dayjsDayOfYear from "dayjs/plugin/dayOfYear";
-import isLeapYear from "dayjs/plugin/isLeapYear";
-
-dayjs.extend(dayjsDayOfYear);
-dayjs.extend(isLeapYear);
+import { ValidationError } from "@/lib/utils/errors";
+import { validateDaysParam } from "@/lib/utils/validation";
+import { getMaxDaysForYear, calculateDateRange, formatDate, fillDateGaps } from "@/lib/utils/date-range";
+import type { Tables } from "@/lib/database/database.types";
 
 export interface MetricsQueryParams {
   days?: number;
   userId: string;
 }
 
-export interface DailyMetric {
-  date: string;
-  engagement: number;
-  reach: number;
-}
+export type DailyMetric = Pick<
+  Tables<"daily_metrics">,
+  "date" | "engagement" | "reach"
+>;
 
 export interface MetricsResponse {
   metrics: DailyMetric[];
@@ -28,24 +23,19 @@ export interface MetricsResponse {
   };
 }
 
-const formatDate = (date: Date) => date.toISOString().split("T")[0];
-
 export async function fetchDailyMetrics(
   supabase: SupabaseClient,
   params: MetricsQueryParams
 ): Promise<MetricsResponse> {
   const { days = 30, userId } = params;
-  const maxDays = dayjs().isLeapYear() ? 366 : 365;
+  const maxDays = getMaxDaysForYear();
 
   const daysValidation = validateDaysParam(days, maxDays);
   if (!daysValidation.valid) {
     throw new ValidationError("Invalid days parameter", daysValidation.error);
   }
 
-  const endDate = new Date();
-  endDate.setDate(endDate.getDate() - 1);
-  const startDate = new Date(endDate);
-  startDate.setDate(startDate.getDate() - days);
+  const { startDate, endDate } = calculateDateRange(days);
 
   const { data, error } = await supabase
     .from("daily_metrics")
@@ -66,15 +56,12 @@ export async function fetchDailyMetrics(
     ])
   );
 
-  const metrics = [];
-  const current = new Date(startDate);
-  while (current <= endDate) {
-    const dateStr = formatDate(current);
-    metrics.push(
-      metricsMap.get(dateStr) || { date: dateStr, engagement: 0, reach: 0 }
-    );
-    current.setDate(current.getDate() + 1);
-  }
+  const metrics = fillDateGaps(
+    startDate,
+    endDate,
+    metricsMap,
+    (dateStr) => ({ date: dateStr, engagement: 0, reach: 0 })
+  );
 
   return {
     metrics,
