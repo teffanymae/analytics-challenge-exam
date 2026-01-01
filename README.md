@@ -4,18 +4,15 @@ A Next.js dashboard for tracking social media engagement across Instagram and Ti
 
 ---
 
-## User Setup
+## User Credentials
 
-1. Create **User A**:
+1. **User A**:
    - Email: `usera@test.com`
    - Password: `TestUser123!`
-   - Auto Confirm User: ✅ (check this)
-2. Click **Create User** and **copy the User ID (UUID)**
-3. Repeat for **User B**:
+
+2. **User B**:
    - Email: `userb@test.com`
    - Password: `TestUser123!`
-   - Auto Confirm User: ✅
-   - **Copy the User ID (UUID)**
 
 ---
 
@@ -43,17 +40,13 @@ analytics-challenge/
 │   ├── app/                          # Next.js App Router
 │   │   ├── api/                      # API Routes
 │   │   │   ├── analytics/            # Analytics endpoints
-│   │   │   │   ├── daily/            # Daily metrics aggregation
-│   │   │   │   └── summary/          # Summary statistics
-│   │   │   ├── auth/                 # Authentication endpoints
-│   │   │   │   ├── login/            # Login handler
-│   │   │   │   ├── logout/           # Logout handler
-│   │   │   │   └── signup/           # Signup handler
+│   │   │   │   └── summary/          # Summary statistics (GET)
+│   │   │   ├── engagement/           # Engagement trends endpoint (POST)
+│   │   │   ├── metrics/              # Metrics endpoints
+│   │   │   │   └── daily/            # Daily metrics (GET, Edge runtime)
 │   │   │   └── posts/                # Posts CRUD operations
-│   │   │       └── [id]/             # Individual post operations
-│   │   ├── auth/                     # Auth pages
-│   │   │   ├── login/                # Login page
-│   │   │   └── signup/               # Signup page
+│   │   │       ├── route.ts          # List posts (POST)
+│   │   │       └── [id]/             # Individual post (GET)
 │   │   ├── dashboard/                # Dashboard page (protected)
 │   │   ├── layout.tsx                # Root layout
 │   │   ├── page.tsx                  # Home/landing page
@@ -62,40 +55,70 @@ analytics-challenge/
 │   │
 │   ├── components/                   # React Components
 │   │   ├── charts/                   # Chart components
-│   │   │   ├── EngagementChart.tsx   # Main engagement visualization
-│   │   │   └── ChartControls.tsx     # Chart type toggles
+│   │   │   ├── engagement/           # Engagement chart components
+│   │   │   │   ├── index.tsx         # Main engagement chart
+│   │   │   │   ├── visx-chart.tsx    # Visx chart implementation
+│   │   │   │   ├── legend-toggle.tsx # Chart legend
+│   │   │   │   └── metric-card.tsx   # Metric summary cards
+│   │   │   └── chart-loading.tsx     # Loading skeleton
 │   │   ├── posts/                    # Post-related components
-│   │   │   ├── PostsTable.tsx        # TanStack Table implementation
-│   │   │   ├── PostModal.tsx         # Post detail modal
-│   │   │   └── PostFilters.tsx       # Platform filters
+│   │   │   ├── table/                # Posts table components
+│   │   │   │   ├── index.tsx         # Main table component
+│   │   │   │   ├── columns.tsx       # Table column definitions
+│   │   │   │   ├── mobile-card.tsx   # Mobile card layout
+│   │   │   │   ├── pagination.tsx    # Table pagination
+│   │   │   │   ├── table-loading.tsx # Loading state
+│   │   │   │   └── empty-state.tsx   # Empty state
+│   │   │   └── modal/                # Post detail modal
+│   │   ├── summary/                  # Summary card components
+│   │   │   ├── index.tsx             # Main summary card
+│   │   │   ├── metric-card.tsx       # Individual metric cards
+│   │   │   ├── top-post-card.tsx     # Top performing post
+│   │   │   └── loading.tsx           # Loading skeleton
 │   │   ├── providers/                # Context providers
-│   │   │   └── QueryProvider.tsx     # TanStack Query setup
-│   │   ├── ui/                       # shadcn/ui components
-│   │   │   ├── button.tsx            # Button component
-│   │   │   ├── card.tsx              # Card component
-│   │   │   ├── table.tsx             # Table primitives
-│   │   │   └── ...                   # Other UI components
-│   │   └── theme-provider.tsx        # Theme context
+│   │   │   └── query-provider.tsx    # TanStack Query setup
+│   │   └── ui/                       # shadcn/ui components
+│   │       ├── button.tsx            # Button component
+│   │       ├── card.tsx              # Card component
+│   │       ├── dialog.tsx            # Dialog/modal component
+│   │       ├── pagination.tsx        # Pagination component
+│   │       ├── select.tsx            # Select dropdown
+│   │       ├── table.tsx             # Table primitives
+│   │       └── ...                   # Other UI components
 │   │
 │   ├── lib/                          # Utilities & Configuration
+│   │   ├── auth/                     # Authentication
+│   │   │   ├── auth.ts               # Server-side auth
+│   │   │   └── auth-edge.ts          # Edge-compatible auth
+│   │   ├── constants/                # App constants
+│   │   │   ├── metrics.ts            # Metric configurations
+│   │   │   ├── platforms.ts          # Platform definitions
+│   │   │   └── routes.ts             # Route constants
+│   │   ├── database/                 # Database types
+│   │   │   └── database.types.ts     # Generated Supabase types
 │   │   ├── hooks/                    # Custom React hooks
-│   │   │   ├── useAnalytics.ts       # Analytics data fetching
-│   │   │   ├── usePosts.ts           # Posts data fetching
-│   │   │   └── useAuth.ts            # Auth state management
+│   │   │   ├── use-posts.ts          # Posts data fetching
+│   │   │   ├── use-summary.ts        # Summary data fetching
+│   │   │   ├── use-trends.ts         # Trends data fetching
+│   │   │   └── use-metrics.ts        # Metrics data fetching
 │   │   ├── services/                 # API service layer
-│   │   │   ├── analytics.ts          # Analytics API calls
-│   │   │   ├── posts.ts              # Posts API calls
-│   │   │   └── auth.ts               # Auth API calls
+│   │   │   ├── engagement.service.ts # Engagement data service
+│   │   │   ├── metrics.service.ts    # Metrics data service
+│   │   │   ├── posts.service.ts      # Posts data service
+│   │   │   └── summary.service.ts    # Summary data service
 │   │   ├── stores/                   # Zustand stores
-│   │   │   ├── useFilterStore.ts     # Filter state (platform, etc.)
-│   │   │   └── useUIStore.ts         # UI state (modals, chart type)
-│   │   ├── aggregation.ts            # Metrics calculation logic
-│   │   ├── auth.ts                   # Supabase auth client
-│   │   ├── auth-edge.ts              # Edge-compatible auth
-│   │   ├── supabase.ts               # Supabase client setup
-│   │   ├── types.ts                  # TypeScript type definitions
-│   │   ├── utils.ts                  # Utility functions
-│   │   └── constants.ts              # App constants
+│   │   │   └── ui-store.ts           # UI state (filters, modals, etc.)
+│   │   ├── supabase/                 # Supabase clients
+│   │   │   ├── client.ts             # Browser client
+│   │   │   ├── server.ts             # Server client
+│   │   │   └── middleware.ts         # Middleware client
+│   │   ├── utils/                    # Utility functions
+│   │   │   ├── date-range.ts         # Date calculation utilities
+│   │   │   ├── engagement.ts         # Engagement calculations
+│   │   │   ├── errors.ts             # Error handling
+│   │   │   ├── response.ts           # API response helpers
+│   │   │   └── validation.ts         # Input validation
+│   │   └── aggregation.ts            # Data aggregation logic
 │   │
 │   └── middleware.ts                 # Next.js middleware (auth protection)
 │
@@ -114,11 +137,14 @@ analytics-challenge/
 ├── components.json                   # shadcn/ui configuration
 ├── next.config.ts                    # Next.js configuration
 ├── tsconfig.json                     # TypeScript configuration
-├── tailwind.config.ts                # Tailwind CSS configuration
 ├── postcss.config.mjs                # PostCSS configuration
 ├── package.json                      # Dependencies
 ├── vercel.json                       # Vercel deployment config
+├── CODE_IMPROVEMENTS.md              # Code improvement notes
 ├── DEPLOYMENT.md                     # Deployment guide
+├── INTERVIEW_PREP.md                 # Interview preparation notes
+├── RLS_TESTING.md                    # RLS testing documentation
+├── TECH_EXAM_ASSESSMENT.md           # Technical assessment notes
 └── README.md                         # This file
 ```
 
@@ -165,7 +191,7 @@ I went with a split approach - heavy lifting on the server, lightweight stuff on
 
 **Server-side for summary metrics:**
 
-Honestly, I didn't want to send hundreds of posts over the wire just to sum them up. The summary endpoint does all the calculations in the API route and sends back like 3 numbers. Way faster, especially on mobile.
+Honestly, I didn't want to send hundreds of posts over the wire just to sum them up. The summary endpoint does all the calculations in the API route and sends back. Way faster, especially on mobile.
 
 Plus TanStack Query caches it automatically, so if you switch between tabs or filters, it doesn't recalculate everything. And keeping the business logic server-side means I can validate it properly and not worry about someone messing with the calculations in the browser console.
 
@@ -423,7 +449,6 @@ Being realistic here - this is what I'd actually tackle if I had another week:
 
 ### Performance (The Obvious Stuff)
 - **Add database indexes** - Right now I'm doing full table scans on `user_id` and `created_at`. With real data, this would be slow. Need composite indexes.
-- **Implement proper caching** - TanStack Query helps, but I'd add Redis for the aggregation endpoints. Those calculations are expensive.
 - **Optimize the chart query** - Currently fetching all daily metrics and aggregating in JS. Should probably do this in SQL with a window function.
 
 ### Features I Wanted But Didn't Have Time For
@@ -442,7 +467,7 @@ Being realistic here - this is what I'd actually tackle if I had another week:
 
 ## Time Spent on This Challenge
 
-**Total**: About 8-10 hours over 2 days (plus ~2 hours of learning/research)
+**Total**: About 12-15 hours over 3 days 
 
 ### My Actual Development Process
 
@@ -465,7 +490,280 @@ Being realistic here - this is what I'd actually tackle if I had another week:
 - **State Management** - Set up Zustand. Zustand took 10 minutes to understand - it's just a simple store with hooks.
 - **TanStack Table** - Built the posts table with TanStack Table.
 - **Charting** - Built the engagement chart with Visx.
-- **Final Polish** - Used AI to refactor and format the code for cleanliness. Added loading states and error messages.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Install Dependencies
+
+```bash
+# Core dependencies
+npm install
+
+# Additional packages (if not in package.json)
+npm install @supabase/supabase-js @supabase/ssr
+npm install zustand @tanstack/react-query
+npm install @tanstack/react-table
+npm install formik yup
+npm install dayjs
+npm install lucide-react
+npm install framer-motion
+
+# Visx for charts
+npm install @visx/axis @visx/curve @visx/event @visx/grid @visx/group @visx/responsive @visx/scale @visx/shape @visx/tooltip
+
+# shadcn/ui components
+npx shadcn@latest init
+npx shadcn@latest add button card dialog table select skeleton label
+
+# Dev tools (optional)
+npm install -D @tanstack/react-query-devtools
+```
+
+### 2. Setup Supabase Project
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Copy your project URL and anon key
+3. Create `.env.local`:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
+
+### 3. Create Database Schema
+
+Go to **SQL Editor** in Supabase Dashboard and run:
+
+```sql
+-- Posts table
+CREATE TABLE posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  platform TEXT NOT NULL CHECK (platform IN ('instagram', 'tiktok')),
+  caption TEXT,
+  thumbnail_url TEXT,
+  media_type TEXT NOT NULL CHECK (media_type IN ('image', 'video', 'carousel')),
+  posted_at TIMESTAMPTZ NOT NULL,
+  likes INTEGER DEFAULT 0,
+  comments INTEGER DEFAULT 0,
+  shares INTEGER DEFAULT 0,
+  saves INTEGER DEFAULT 0,
+  reach INTEGER DEFAULT 0,
+  impressions INTEGER DEFAULT 0,
+  engagement_rate DECIMAL(5,2),
+  permalink TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Daily metrics table
+CREATE TABLE daily_metrics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  date DATE NOT NULL,
+  engagement INTEGER DEFAULT 0,
+  reach INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date)
+);
+
+-- Create indexes
+CREATE INDEX idx_posts_user_id ON posts(user_id);
+CREATE INDEX idx_posts_posted_at ON posts(posted_at);
+CREATE INDEX idx_daily_metrics_user_id ON daily_metrics(user_id);
+CREATE INDEX idx_daily_metrics_date ON daily_metrics(date);
+CREATE INDEX idx_daily_metrics_user_date ON daily_metrics(user_id, date);
+
+-- Enable RLS
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_metrics ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for posts
+CREATE POLICY "Users can view their own posts"
+  ON posts FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own posts"
+  ON posts FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own posts"
+  ON posts FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own posts"
+  ON posts FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- RLS Policies for daily_metrics
+CREATE POLICY "Users can view their own metrics"
+  ON daily_metrics FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own metrics"
+  ON daily_metrics FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own metrics"
+  ON daily_metrics FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own metrics"
+  ON daily_metrics FOR DELETE
+  USING (auth.uid() = user_id);
+```
+
+### 4. Create Test Users
+
+Go to **Authentication** → **Users** → **Add User**:
+
+**User A:**
+- Email: `usera@test.com`
+- Password: `TestUser123!`
+- ✅ Auto Confirm User
+
+**User B:**
+- Email: `userb@test.com`
+- Password: `TestUser123!`
+- ✅ Auto Confirm User
+
+Copy the User IDs after creation.
+
+### 5. Seed Database
+
+Update `superbase/seed.sql` with your actual user IDs, then run it in **SQL Editor**.
+
+### 6. Generate TypeScript Types
+
+```bash
+# Login to Supabase CLI
+npx supabase login
+
+# Generate types (replace with your project ID)
+npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/lib/database/database.types.ts
+```
+
+### 7. Run Development Server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) and login with test user credentials.
+
+---
+
+## 🏗️ Architecture Overview
+
+### Authentication Flow
+
+```
+middleware.ts → checks auth → redirects if needed
+     ↓
+  app/dashboard → protected route
+     ↓
+  API routes → verify user → query with RLS
+```
+
+### Data Flow
+
+```
+Component → TanStack Query Hook → API Route → Supabase (RLS) → Response
+```
+
+### State Management
+
+- **Server State**: TanStack Query (posts, analytics, metrics)
+- **UI State**: Zustand (filters, modals, pagination)
+- **Auth State**: Supabase Auth (handled by middleware)
+
+---
+
+## 📝 Key Implementation Examples
+
+### API Route with RLS
+
+```typescript
+// src/app/api/posts/route.ts
+import { createClient } from "@/lib/supabase/server";
+
+export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+  
+  // Get authenticated user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Query with RLS - automatically filters by user_id
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("posted_at", { ascending: false });
+
+  return NextResponse.json({ data });
+}
+```
+
+### TanStack Query Hook
+
+```typescript
+// src/lib/hooks/use-posts.ts
+import { useQuery } from '@tanstack/react-query';
+
+export function usePosts(platform?: string, page = 1, pageSize = 10) {
+  return useQuery({
+    queryKey: ['posts', platform, page, pageSize],
+    queryFn: async () => {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ platforms: platform ? [platform] : [], page, pageSize }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch posts');
+      return response.json();
+    },
+  });
+}
+```
+
+### Zustand Store
+
+```typescript
+// src/lib/stores/ui-store.ts
+import { create } from 'zustand';
+
+interface UIState {
+  platformFilter: string | undefined;
+  selectedPostId: string | null;
+  isPostModalOpen: boolean;
+  setPlatformFilter: (platform: string | undefined) => void;
+  openPostModal: (postId: string) => void;
+  closePostModal: () => void;
+}
+
+export const useUIStore = create<UIState>((set) => ({
+  platformFilter: undefined,
+  selectedPostId: null,
+  isPostModalOpen: false,
+  setPlatformFilter: (platform) => set({ platformFilter: platform }),
+  openPostModal: (postId) => set({ selectedPostId: postId, isPostModalOpen: true }),
+  closePostModal: () => set({ selectedPostId: null, isPostModalOpen: false }),
+}));
+```
+
+---
+
+### Day 3 (~3 hours)
+- **Final Polish** - Did some final refactoring and formatting.
+- **README** - Final documentation.
 
 ### What Took Longer Than Expected
 - **Learning curve for the required tech stacks** - 5 hours of reading RND and trying to understand the code that was generated by AI

@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ValidationError } from "@/lib/errors";
-import { isValidPlatform, validateDaysParam } from "@/lib/validation";
+import { ValidationError } from "@/lib/utils/errors";
+import { isValidPlatform, validateDaysParam } from "@/lib/utils/validation";
 import { aggregateByDate, fillMissingDates, calculateTotals } from "@/lib/aggregation";
-import { calculateChange } from "@/lib/engagement";
+import { calculateChange } from "@/lib/utils/engagement";
+import { getMaxDaysForYear, calculateComparisonPeriods } from "@/lib/utils/date-range";
 import type { DailyEngagement } from "@/lib/aggregation";
 
 export interface EngagementQueryParams {
@@ -30,8 +31,9 @@ export async function fetchEngagementData(
   params: EngagementQueryParams
 ): Promise<EngagementResponse> {
   const { days = 30, platform, userId } = params;
+  const maxDays = getMaxDaysForYear();
 
-  const daysValidation = validateDaysParam(days, 365);
+  const daysValidation = validateDaysParam(days, maxDays);
   if (!daysValidation.valid) {
     throw new ValidationError("Invalid days parameter", daysValidation.error);
   }
@@ -43,44 +45,46 @@ export async function fetchEngagementData(
     );
   }
 
-  const currentEndDate = new Date();
-  const currentStartDate = new Date();
-  currentStartDate.setDate(currentStartDate.getDate() - days);
+  const { current, previous } = calculateComparisonPeriods(days);
+  const { startDate: currentStartDate, endDate: currentEndDate } = current;
+  const { startDate: previousStartDate, endDate: previousEndDate } = previous;
 
-  const previousEndDate = new Date(currentStartDate);
-  previousEndDate.setDate(previousEndDate.getDate() - 1);
-  const previousStartDate = new Date(previousEndDate);
-  previousStartDate.setDate(previousStartDate.getDate() - days);
+  const buildCurrentQuery = () => {
+    let query = supabase
+      .from("posts")
+      .select("posted_at, likes, comments, shares, saves")
+      .eq("user_id", userId)
+      .gte("posted_at", currentStartDate.toISOString())
+      .lte("posted_at", currentEndDate.toISOString());
+    
+    if (platform) {
+      query = query.eq("platform", platform.toLowerCase());
+    }
+    
+    return query;
+  };
 
-  let currentQuery = supabase
-    .from("posts")
-    .select("posted_at, likes, comments, shares, saves")
-    .eq("user_id", userId)
-    .gte("posted_at", currentStartDate.toISOString())
-    .lte("posted_at", currentEndDate.toISOString());
-
-  let previousQuery = supabase
-    .from("posts")
-    .select("posted_at, likes, comments, shares, saves")
-    .eq("user_id", userId)
-    .gte("posted_at", previousStartDate.toISOString())
-    .lte("posted_at", previousEndDate.toISOString());
-
-  if (platform) {
-    currentQuery = currentQuery.eq("platform", platform.toLowerCase());
-    previousQuery = previousQuery.eq("platform", platform.toLowerCase());
-  }
+  const buildPreviousQuery = () => {
+    let query = supabase
+      .from("posts")
+      .select("posted_at, likes, comments, shares, saves")
+      .eq("user_id", userId)
+      .gte("posted_at", previousStartDate.toISOString())
+      .lte("posted_at", previousEndDate.toISOString());
+    
+    if (platform) {
+      query = query.eq("platform", platform.toLowerCase());
+    }
+    
+    return query;
+  };
 
   const [currentResult, previousResult] = await Promise.all([
-    currentQuery,
-    previousQuery,
+    buildCurrentQuery(),
+    buildPreviousQuery(),
   ]);
 
-  if (currentResult.error) {
-    throw new Error("Unable to retrieve engagement data. Please try again.");
-  }
-
-  if (previousResult.error) {
+  if (currentResult.error || previousResult.error) {
     throw new Error("Unable to retrieve engagement data. Please try again.");
   }
 

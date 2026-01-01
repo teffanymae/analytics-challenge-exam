@@ -20,8 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { usePost } from "@/lib/hooks/use-posts";
 import Image from "next/image";
-import { formatDate, formatTime } from "@/lib/date";
-import { calculateTotalEngagement } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/utils/date";
+import { calculateEngagement } from "@/lib/utils/engagement";
 
 const MetricCard = ({
   icon: Icon,
@@ -258,7 +258,7 @@ export function PostDetailModal({
                   <div>
                     <p className="text-sm text-gray-600">Total Engagement</p>
                     <p className="text-3xl font-bold text-gray-900">
-                      {calculateTotalEngagement(post).toLocaleString()}
+                      {calculateEngagement(post).toLocaleString()}
                     </p>
                   </div>
                   <div className="text-right">

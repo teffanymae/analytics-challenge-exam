@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { authenticateUserEdge } from "@/lib/auth-edge";
+import { authenticateUserEdge } from "@/lib/auth/auth-edge";
 import { fetchDailyMetrics } from "@/lib/services/metrics.service";
-import { handleError, successResponse } from "@/lib/response";
+import { handleError, successResponse } from "@/lib/utils/response";
 
 export const runtime = "edge";
 

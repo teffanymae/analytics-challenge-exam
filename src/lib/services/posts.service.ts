@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ValidationError } from "@/lib/errors";
-import { isValidPlatform, sanitizePageParams } from "@/lib/validation";
+import { ValidationError, NotFoundError } from "@/lib/utils/errors";
+import { isValidPlatform, sanitizePageParams, isValidUUID } from "@/lib/utils/validation";
+import type { Tables } from "@/lib/database/database.types";
 
 export interface PostsQueryParams {
   platform?: string;
@@ -70,7 +71,33 @@ export async function fetchPosts(
   };
 
   return {
-    data: data || [],
+    data: (data || []) as Tables<"posts">[],
     pagination,
   };
+}
+
+export async function fetchPostById(
+  supabase: SupabaseClient,
+  postId: string,
+  userId: string
+) {
+  if (!isValidUUID(postId)) {
+    throw new ValidationError(
+      "Invalid post ID format",
+      "Invalid post ID format."
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("id", postId)
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    throw new NotFoundError("Post not found or you don't have access to it");
+  }
+
+  return data as Tables<"posts">;
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getUserFriendlyError } from "@/lib/errors";
+import { getUserFriendlyError } from "@/lib/utils/errors";
 
 interface DailyMetric {
   date: string;
