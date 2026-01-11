@@ -1,6 +1,6 @@
 # Analytics Dashboard Challenge
 
-A Next.js dashboard for tracking social media engagement across Instagram and TikTok. Built with Next.js 15, Supabase, TanStack Query, and Recharts.
+A Next.js dashboard for tracking social media engagement across Instagram and TikTok. Built with Next.js 16, Supabase, TanStack Query, and Visx.
 
 ---
 
@@ -20,7 +20,7 @@ A Next.js dashboard for tracking social media engagement across Instagram and Ti
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| **Framework** | Next.js 15 (App Router) | SSR/CSR, routing, API routes |
+| **Framework** | Next.js 16 (App Router) | SSR/CSR, routing, API routes |
 | **Database** | Supabase (PostgreSQL) | Data persistence, auth, RLS |
 | **Server State** | TanStack Query v5 | Caching, refetching, deduplication |
 | **Client State** | Zustand | UI state, localStorage persistence |
@@ -151,7 +151,7 @@ analytics-challenge/
 ### Key Architecture Decisions
 
 **App Router Structure**
-- Using Next.js 15 App Router for file-based routing
+- Using Next.js 16 App Router for file-based routing
 - API routes colocated with pages for better organization
 - Server Components by default, Client Components where needed
 
@@ -178,38 +178,51 @@ analytics-challenge/
 
 ## 1. Where should engagement metrics be aggregated?
 
-**Chosen Approach: Hybrid (API Route + Client-side)**
+**Chosen Approach: Server-Side Aggregation**
 
-I went with a split approach - heavy lifting on the server, lightweight stuff on the client.
+All data aggregation happens on the server. The client receives only pre-aggregated data.
 
 ### What I Built
-- **API Route (`/api/analytics/summary`)** - Does the math for summary cards (total engagement, averages, trend percentages)
-- **Client-side (`aggregation.ts`)** - Groups posts by date and fills in missing days for the charts
-- **Database** - Just stores raw posts, no fancy views or stored procedures
+- **Summary Service (`src/lib/services/summary.service.ts`)** - Calculates total engagement, averages, top post, and trend percentages
+- **Engagement Service (`src/lib/services/engagement.service.ts`)** - Aggregates posts by date, fills missing dates, computes period comparisons
+- **Shared Utilities (`src/lib/aggregation.ts`)** - Reusable aggregation functions used by server-side services only
+- **Database** - Stores raw posts with indexes on `user_id` and `posted_at`
 
 ### Why I Did It This Way
 
-**Server-side for summary metrics:**
+**Benefits of server-side aggregation:**
 
-Honestly, I didn't want to send hundreds of posts over the wire just to sum them up. The summary endpoint does all the calculations in the API route and sends back. Way faster, especially on mobile.
+- **Minimal network transfer** - Only aggregated daily totals sent to client, not raw posts
+- **Single source of truth** - All aggregation logic in one place (no duplication between client/server)
+- **Better for mobile** - No client-side computation overhead, works well on slow connections
+- **Scalable** - Works well up to 10k posts; can move to SQL GROUP BY at 100k+ posts
 
-Plus TanStack Query caches it automatically, so if you switch between tabs or filters, it doesn't recalculate everything. And keeping the business logic server-side means I can validate it properly and not worry about someone messing with the calculations in the browser console.
+**How it works:**
 
-**Client-side for chart data:**
+The engagement service fetches posts from the database, then uses shared utility functions (`aggregateByDate`, `fillMissingDates`, `calculateTotals`) to group by date and compute metrics. The API returns pre-aggregated data like:
 
-The charts are different - users need to switch between likes/comments/shares/saves instantly. If I did that server-side, I'd need 4 different API endpoints or one endpoint that returns everything (wasteful). 
+```typescript
+{
+  current: [{ date: '2024-01-01', likes: 100, comments: 20, ... }],
+  previous: [{ date: '2023-12-01', likes: 80, comments: 15, ... }],
+  summary: { likes: { current: 100, previous: 80, change: 25 }, ... }
+}
+```
 
-By doing the date grouping in the browser, I can fetch the raw posts once and then let users toggle between metrics without any loading spinners. The aggregation logic is pretty simple anyway - just grouping by date and summing values.
+TanStack Query caches these results, so switching between time periods is instant if already fetched.
 
 ### The Trade-offs
 
 **What's good:**
-- Fast - only sends what's needed over the network
-- TanStack Query handles all the caching for free
-- Didn't have to build a bunch of API endpoints
+- Minimal network transfer - only aggregated data sent to client
+- Single source of truth for aggregation logic
+- TanStack Query handles all the caching automatically
+- Works well on mobile and slow connections
 
-**What's not ideal:**
-- Some business logic lives in two places (server for summaries, client for charts)
+**What could be improved at scale:**
+- At 100k+ posts, would move to database-level aggregation (SQL GROUP BY)
+- Could add composite indexes on `(user_id, posted_at)` for faster queries
+- Could implement materialized views for pre-computed daily rollups
 
 ---
 

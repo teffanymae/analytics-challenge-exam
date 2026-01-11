@@ -22,12 +22,17 @@ export default function DashboardPage() {
   const router = useRouter();
   const days = useUIStore((state) => state.days);
   const setDays = useUIStore((state) => state.setDays);
+  const hasHydrated = useUIStore((state) => state._hasHydrated);
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleMembers = () => {
     router.push("/dashboard/teams");
   };
+  
+  if (!hasHydrated) {
+    return null;
+  }
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
