@@ -7,6 +7,7 @@ import type { Tables } from "@/lib/database/database.types";
 export interface MetricsQueryParams {
   days?: number;
   userId: string;
+  accessibleUserIds?: string[];
 }
 
 export type DailyMetric = Pick<
@@ -27,7 +28,7 @@ export async function fetchDailyMetrics(
   supabase: SupabaseClient,
   params: MetricsQueryParams
 ): Promise<MetricsResponse> {
-  const { days = 30, userId } = params;
+  const { days = 30, userId, accessibleUserIds } = params;
   const maxDays = getMaxDaysForYear();
 
   const daysValidation = validateDaysParam(days, maxDays);
@@ -37,10 +38,12 @@ export async function fetchDailyMetrics(
 
   const { startDate, endDate } = calculateDateRange(days);
 
+  const userIds = accessibleUserIds && accessibleUserIds.length > 0 ? accessibleUserIds : [userId];
+
   const { data, error } = await supabase
     .from("daily_metrics")
     .select("date, engagement, reach")
-    .eq("user_id", userId)
+    .in("user_id", userIds)
     .gte("date", formatDate(startDate))
     .lte("date", formatDate(endDate))
     .order("date", { ascending: true });

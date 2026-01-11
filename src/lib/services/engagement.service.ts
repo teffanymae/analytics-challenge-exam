@@ -10,6 +10,7 @@ export interface EngagementQueryParams {
   days?: number;
   platform?: string;
   userId: string;
+  accessibleUserIds?: string[];
 }
 
 export interface EngagementSummary {
@@ -30,7 +31,7 @@ export async function fetchEngagementData(
   supabase: SupabaseClient,
   params: EngagementQueryParams
 ): Promise<EngagementResponse> {
-  const { days = 30, platform, userId } = params;
+  const { days = 30, platform, userId, accessibleUserIds } = params;
   const maxDays = getMaxDaysForYear();
 
   const daysValidation = validateDaysParam(days, maxDays);
@@ -49,11 +50,13 @@ export async function fetchEngagementData(
   const { startDate: currentStartDate, endDate: currentEndDate } = current;
   const { startDate: previousStartDate, endDate: previousEndDate } = previous;
 
+  const userIds = accessibleUserIds && accessibleUserIds.length > 0 ? accessibleUserIds : [userId];
+
   const buildCurrentQuery = () => {
     let query = supabase
       .from("posts")
       .select("posted_at, likes, comments, shares, saves")
-      .eq("user_id", userId)
+      .in("user_id", userIds)
       .gte("posted_at", currentStartDate.toISOString())
       .lte("posted_at", currentEndDate.toISOString());
     
@@ -68,7 +71,7 @@ export async function fetchEngagementData(
     let query = supabase
       .from("posts")
       .select("posted_at, likes, comments, shares, saves")
-      .eq("user_id", userId)
+      .in("user_id", userIds)
       .gte("posted_at", previousStartDate.toISOString())
       .lte("posted_at", previousEndDate.toISOString());
     

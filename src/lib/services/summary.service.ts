@@ -8,6 +8,7 @@ import type { Tables } from "@/lib/database/database.types";
 export interface AnalyticsQueryParams {
   days?: number;
   userId: string;
+  accessibleUserIds?: string[];
 }
 
 export type TopPerformingPost = Pick<
@@ -33,7 +34,7 @@ export async function fetchAnalyticsSummary(
   supabase: SupabaseClient,
   params: AnalyticsQueryParams
 ): Promise<AnalyticsSummary> {
-  const { days = 30, userId } = params;
+  const { days = 30, userId, accessibleUserIds } = params;
   const maxDays = getMaxDaysForYear();
 
   const daysValidation = validateDaysParam(days, maxDays);
@@ -45,19 +46,21 @@ export async function fetchAnalyticsSummary(
   const { startDate: currentStartDate, endDate: currentEndDate } = current;
   const { startDate: previousStartDate } = previous;
 
+  const userIds = accessibleUserIds && accessibleUserIds.length > 0 ? accessibleUserIds : [userId];
+
   const [currentResult, previousResult] = await Promise.all([
     supabase
       .from("posts")
       .select(
         "id, caption, platform, likes, comments, shares, saves, engagement_rate, posted_at, thumbnail_url"
       )
-      .eq("user_id", userId)
+      .in("user_id", userIds)
       .gte("posted_at", currentStartDate.toISOString())
       .lte("posted_at", currentEndDate.toISOString()),
     supabase
       .from("posts")
       .select("likes, comments, shares, saves, engagement_rate")
-      .eq("user_id", userId)
+      .in("user_id", userIds)
       .gte("posted_at", previousStartDate.toISOString())
       .lt("posted_at", currentStartDate.toISOString()),
   ]);

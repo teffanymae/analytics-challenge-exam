@@ -98,6 +98,33 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          id: string
+          admin_user_id: string
+          member_user_id: string | null
+          invited_email: string | null
+          invited_at: string | null
+          status: string
+        }
+        Insert: {
+          id?: string
+          admin_user_id: string
+          member_user_id?: string | null
+          invited_email?: string | null
+          invited_at?: string | null
+          status?: string
+        }
+        Update: {
+          id?: string
+          admin_user_id?: string
+          member_user_id?: string | null
+          invited_email?: string | null
+          invited_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

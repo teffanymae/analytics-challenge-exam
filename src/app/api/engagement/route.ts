@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { authenticateUser } from "@/lib/auth/auth";
 import { fetchEngagementData } from "@/lib/services/engagement.service";
+import { getAccessibleUserIds } from "@/lib/services/team.service";
 import { handleError, successResponse } from "@/lib/utils/response";
 
 interface TrendsRequestBody {
@@ -13,9 +14,12 @@ export async function POST(request: NextRequest) {
     const { user, supabase } = await authenticateUser();
     const body: TrendsRequestBody = await request.json();
 
+    const accessibleUserIds = await getAccessibleUserIds(supabase, user.id);
+
     const result = await fetchEngagementData(supabase, {
       ...body,
       userId: user.id,
+      accessibleUserIds,
     });
 
     return successResponse(result);

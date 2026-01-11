@@ -25,6 +25,10 @@ export default function DashboardPage() {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const handleMembers = () => {
+    router.push("/dashboard/teams");
+  };
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     await supabase.auth.signOut();
@@ -38,14 +42,23 @@ export default function DashboardPage() {
       <header className="bg-white border-b">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold py-2">Analytics Dashboard</h1>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="cursor-pointer"
-            disabled={isLoggingOut}
-          >
-            {isLoggingOut ? "Logging out..." : "Logout"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleMembers}
+              variant="outline"
+              className="cursor-pointer"
+            >
+              Manage Members
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="cursor-pointer"
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </Button>
+          </div>
         </div>
       </header>
 

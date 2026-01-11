@@ -8,6 +8,7 @@ export interface PostsQueryParams {
   page?: number;
   pageSize?: number;
   userId: string;
+  accessibleUserIds?: string[];
 }
 
 export interface PaginationMeta {
@@ -30,6 +31,7 @@ export async function fetchPosts(
     page = DEFAULT_PAGE,
     pageSize = DEFAULT_PAGE_SIZE,
     userId,
+    accessibleUserIds,
   } = params;
 
   if (platform && !isValidPlatform(platform)) {
@@ -45,10 +47,12 @@ export async function fetchPosts(
   const from = (validatedPage - 1) * validatedPageSize;
   const to = from + validatedPageSize - 1;
 
+  const userIds = accessibleUserIds && accessibleUserIds.length > 0 ? accessibleUserIds : [userId];
+
   let query = supabase
     .from("posts")
     .select("*", { count: "exact" })
-    .eq("user_id", userId)
+    .in("user_id", userIds)
     .order("posted_at", { ascending: false })
     .range(from, to);
 
@@ -79,7 +83,8 @@ export async function fetchPosts(
 export async function fetchPostById(
   supabase: SupabaseClient,
   postId: string,
-  userId: string
+  userId: string,
+  accessibleUserIds?: string[]
 ) {
   if (!isValidUUID(postId)) {
     throw new ValidationError(
@@ -88,11 +93,13 @@ export async function fetchPostById(
     );
   }
 
+  const userIds = accessibleUserIds && accessibleUserIds.length > 0 ? accessibleUserIds : [userId];
+
   const { data, error } = await supabase
     .from("posts")
     .select("*")
     .eq("id", postId)
-    .eq("user_id", userId)
+    .in("user_id", userIds)
     .single();
 
   if (error) {

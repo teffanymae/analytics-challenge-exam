@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -28,7 +27,6 @@ const signupSchema = Yup.object({
 });
 
 export default function SignupPage() {
-  const router = useRouter();
   const supabase = createClient();
 
   const formik = useFormik({
@@ -42,12 +40,16 @@ export default function SignupPage() {
         const { error } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         });
 
         if (error) throw error;
 
-        router.push("/dashboard");
-        router.refresh();
+        setStatus({
+          success: "Check your email for a confirmation link!",
+        });
       } catch (err) {
         setStatus({
           error: err instanceof Error ? err.message : "An error occurred",
@@ -101,6 +103,9 @@ export default function SignupPage() {
             </div>
             {formik.status?.error && (
               <p className="text-sm text-red-500">{formik.status.error}</p>
+            )}
+            {formik.status?.success && (
+              <p className="text-sm text-green-600">{formik.status.success}</p>
             )}
             <Button
               type="submit"
